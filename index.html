@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Родовід Курусів — с. Розлуч</title>
-<meta name="description" content="Родовід тата: інтерактивне дерево предків з можливістю розгортати покоління.">
+<meta name="description" content="Родовід тата: розгортний список предків, покоління за поколінням.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -23,20 +23,13 @@
     <div class="controls">
       <button id="expandAll" class="ctrl-btn">Розгорнути все</button>
       <button id="collapseAll" class="ctrl-btn">Згорнути все</button>
-      <div class="zoom-controls">
-        <button id="zoomOut" aria-label="Зменшити">−</button>
-        <span id="zoomLevel">100%</span>
-        <button id="zoomIn" aria-label="Збільшити">+</button>
-      </div>
     </div>
   </div>
 </header>
 
-<p class="hint">Клікніть на стрілку картки, щоб розгорнути батьків. Клікніть на саму картку — щоб побачити повний метричний запис.</p>
+<p class="hint">Клікніть ▸, щоб розгорнути батьків цієї пари. Клікніть саму картку — щоб побачити повний метричний запис шлюбу.</p>
 
-<main id="canvas-wrap">
-  <div id="canvas"><div class="tree" id="tree"></div></div>
-</main>
+<main><div id="tree"></div></main>
 
 <div id="modal-overlay" class="hidden">
   <div id="modal">

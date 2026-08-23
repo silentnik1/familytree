@@ -2,11 +2,9 @@
   "use strict";
 
   var ROOT = window.PEDIGREE;
-  var canvas = document.getElementById("canvas");
   var tree = document.getElementById("tree");
-  var canvasWrap = document.getElementById("canvas-wrap");
 
-  var expandedPaths = new Set(["root"]); // "root" expanded => show дід level by default
+  var expandedPaths = new Set(["root"]);
   var sibOpenPaths = new Set();
 
   function escapeHtml(s) {
@@ -20,60 +18,60 @@
 
   function cardHTML(node, path, isRoot) {
     var livingCls = isRoot ? " living" : "";
-    var nameLine = '<span class="name' + livingCls + '">' + escapeHtml(node.husband) + "</span>";
+    var line = '<span class="name' + livingCls + '">' + escapeHtml(node.husband) + "</span>";
     if (node.wife) {
-      nameLine += '<div class="plus">⚭' + (node.marriage_date ? " " + escapeHtml(node.marriage_date) : "") + "</div>";
-      nameLine += '<span class="name' + livingCls + '">' + escapeHtml(node.wife) + (isRoot && node.birth_year ? " (" + escapeHtml(node.birth_year) + " р.н.)" : "") + "</span>";
+      line += '<span class="sep">⚭' + (node.marriage_date ? " " + escapeHtml(node.marriage_date) : "") + "</span>";
+      line += '<span class="name' + livingCls + '">' + escapeHtml(node.wife) + "</span>";
+      if (isRoot && node.birth_year) line += '<span class="meta">(' + escapeHtml(node.birth_year) + " р.н.)</span>";
     } else if (isRoot && node.birth_year) {
-      nameLine += '<div class="unknown">' + escapeHtml(node.birth_year) + " р.н.</div>";
+      line += '<span class="meta">(' + escapeHtml(node.birth_year) + " р.н.)</span>";
     } else {
-      nameLine += '<div class="unknown">дані про дружину невідомі</div>';
+      line += '<span class="unknown"> — дружина невідома</span>';
     }
-
-    var badge = node.record && node.record_detail
-      ? '<div><span class="rec-badge">запис ' + escapeHtml(node.record) + "</span></div>"
-      : "";
-
-    var sibHTML = "";
-    if (node.siblings && node.siblings.length) {
-      var open = sibOpenPaths.has(path);
-      sibHTML =
-        '<button class="sib-toggle" data-sibpath="' + escapeHtml(path) + '">' +
-        (open ? "− " : "+ ") + node.siblings.length + " брат./сестр." +
-        "</button>" +
-        '<div class="sib-branch' + (open ? " open" : "") + '">' +
-        node.siblings.map(function (s, i) {
-          var delay = open ? (i * 0.045).toFixed(3) + "s" : "0s";
-          return '<div class="sib-card" style="transition-delay:' + delay + '">' + escapeHtml(s) + "</div>";
-        }).join("") +
-        "</div>";
+    if (node.record && node.record_detail) {
+      line += '<span class="rec-badge">запис ' + escapeHtml(node.record) + "</span>";
     }
-
-    var expanded = expandedPaths.has(path);
-    var canExpand = hasParents(node);
-    var expandBtn = canExpand
-      ? '<button class="expand-btn' + (expanded ? " expanded" : "") + '" data-path="' + escapeHtml(path) + '" aria-label="Розгорнути">+</button>'
-      : "";
-
     return (
-      '<div class="node-card' + (isRoot ? " root" : "") + '" data-detail-path="' + escapeHtml(path) + '">' +
-      nameLine + badge + sibHTML + expandBtn +
+      '<div class="entry-card' + (isRoot ? " root" : "") + '" data-detail-path="' + escapeHtml(path) + '">' +
+      '<div class="line">' + line + "</div>" +
       "</div>"
     );
   }
 
-  function renderLI(node, path, isRoot) {
-    var html = "<li>" + cardHTML(node, path, isRoot);
-    if (hasParents(node) && expandedPaths.has(path)) {
-      html += "<ul>";
-      ["father_side", "mother_side"].forEach(function (key) {
-        if (node.parents[key]) {
-          html += renderLI(node.parents[key], path + "." + key, false);
-        }
-      });
-      html += "</ul>";
+  function renderEntry(node, path, isRoot) {
+    var hasP = hasParents(node);
+    var expanded = expandedPaths.has(path);
+
+    var toggleHtml = hasP
+      ? '<button class="toggle' + (expanded ? " open" : "") + '" data-path="' + escapeHtml(path) + '" aria-label="Розгорнути">▸</button>'
+      : '<span class="toggle disabled" aria-hidden="true">·</span>';
+
+    var html = '<div class="entry">' +
+      '<div class="entry-row">' + toggleHtml + cardHTML(node, path, isRoot) + "</div>";
+
+    if (node.siblings && node.siblings.length) {
+      var sibOpen = sibOpenPaths.has(path);
+      html += '<button class="sib-toggle" data-sibpath="' + escapeHtml(path) + '">' +
+        (sibOpen ? "− " : "+ ") + node.siblings.length + " брат./сестр." + "</button>";
+      html += '<div class="collapsible' + (sibOpen ? " open" : "") + '"><div class="inner"><div class="sib-list">' +
+        node.siblings.map(function (s) {
+          var m = /(\d{1,3}\s?[-–]{1,2}\s?\d{1,2}½?)/.exec(s || "");
+          var rec = m ? m[1].replace(/\s/g, "") : null;
+          var badge = rec ? '<span class="rec-badge">' + escapeHtml(rec) + "</span>" : "";
+          return '<div class="sib-item">' + escapeHtml(s) + badge + "</div>";
+        }).join("") +
+        "</div></div></div>";
     }
-    html += "</li>";
+
+    if (hasP) {
+      html += '<div class="collapsible' + (expanded ? " open" : "") + '"><div class="inner"><div class="children">';
+      ["father_side", "mother_side"].forEach(function (key) {
+        if (node.parents[key]) html += renderEntry(node.parents[key], path + "." + key, false);
+      });
+      html += "</div></div></div>";
+    }
+
+    html += "</div>";
     return html;
   }
 
@@ -88,12 +86,12 @@
   }
 
   function render() {
-    tree.innerHTML = "<ul>" + renderLI(ROOT, "root", true) + "</ul>";
+    tree.innerHTML = renderEntry(ROOT, "root", true);
     attachEvents();
   }
 
   function attachEvents() {
-    tree.querySelectorAll(".expand-btn").forEach(function (btn) {
+    tree.querySelectorAll(".toggle:not(.disabled)").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
         var path = btn.getAttribute("data-path");
@@ -111,7 +109,7 @@
         render();
       });
     });
-    tree.querySelectorAll(".node-card").forEach(function (card) {
+    tree.querySelectorAll(".entry-card").forEach(function (card) {
       card.addEventListener("click", function () {
         openDetail(card.getAttribute("data-detail-path"));
       });
@@ -157,9 +155,6 @@
       if (!node.marriage_date && !node.birth_year) {
         body += '<p class="no-record">Детального метричного запису для цієї особи не знайдено в реєстрах шлюбів.</p>';
       }
-      if (node.siblings && node.siblings.length) {
-        body += '<div class="side"><h3>Брати / сестри</h3><div class="rawtext">' + node.siblings.map(escapeHtml).join("\n") + "</div></div>";
-      }
     }
     document.getElementById("modal-body").innerHTML = body;
     document.getElementById("modal-overlay").classList.remove("hidden");
@@ -191,64 +186,5 @@
     render();
   });
 
-  // ---------------- Zoom / Pan ----------------
-  var zoom = 1;
-  var MIN_Z = 0.4, MAX_Z = 1.6;
-  function applyZoom() {
-    canvas.style.transform = "scale(" + zoom + ")";
-    document.getElementById("zoomLevel").textContent = Math.round(zoom * 100) + "%";
-  }
-  document.getElementById("zoomIn").addEventListener("click", function () {
-    zoom = Math.min(MAX_Z, +(zoom + 0.1).toFixed(2)); applyZoom();
-  });
-  document.getElementById("zoomOut").addEventListener("click", function () {
-    zoom = Math.max(MIN_Z, +(zoom - 0.1).toFixed(2)); applyZoom();
-  });
-  canvasWrap.addEventListener("wheel", function (e) {
-    if (!e.ctrlKey && !e.metaKey) return;
-    e.preventDefault();
-    var delta = e.deltaY > 0 ? -0.08 : 0.08;
-    zoom = Math.min(MAX_Z, Math.max(MIN_Z, +(zoom + delta).toFixed(2)));
-    applyZoom();
-  }, { passive: false });
-
-  var isDown = false, startX, startY, scrollLeft, scrollTop;
-  canvasWrap.addEventListener("mousedown", function (e) {
-    if (e.target.closest(".node-card") || e.target.closest("button")) return;
-    isDown = true;
-    canvasWrap.classList.add("grabbing");
-    startX = e.pageX; startY = e.pageY;
-    scrollLeft = canvasWrap.scrollLeft; scrollTop = canvasWrap.scrollTop;
-  });
-  window.addEventListener("mouseup", function () { isDown = false; canvasWrap.classList.remove("grabbing"); });
-  window.addEventListener("mousemove", function (e) {
-    if (!isDown) return;
-    canvasWrap.scrollLeft = scrollLeft - (e.pageX - startX);
-    canvasWrap.scrollTop = scrollTop - (e.pageY - startY);
-  });
-
-  var touchDist = null;
-  canvasWrap.addEventListener("touchstart", function (e) {
-    if (e.touches.length === 2) {
-      touchDist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-    }
-  }, { passive: true });
-  canvasWrap.addEventListener("touchmove", function (e) {
-    if (e.touches.length === 2 && touchDist) {
-      var d = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      var delta = (d - touchDist) / 400;
-      zoom = Math.min(MAX_Z, Math.max(MIN_Z, +(zoom + delta).toFixed(2)));
-      applyZoom();
-      touchDist = d;
-    }
-  }, { passive: true });
-
   render();
-  applyZoom();
 })();
