@@ -98,34 +98,35 @@ body{
   margin:0 auto;
 }
 
-/* ---------------- Org-chart tree (classic CSS pattern) ---------------- */
-.tree{ text-align:center; }
+/* ---------------- Org-chart tree (horizontal, growing rightward) ---------------- */
+.tree{ text-align:left; }
 .tree ul{
-  padding-top:26px; position:relative;
-  display:flex; justify-content:center;
+  padding:0; position:relative;
+  display:flex; flex-direction:column; justify-content:center;
   margin:0; list-style:none;
 }
-.tree li{
-  display:flex; flex-direction:column; align-items:center;
-  position:relative; padding:26px 16px 0; list-style:none;
-}
-.tree li::before, .tree li::after{
-  content:""; position:absolute; top:0; right:50%;
-  border-top:2px solid var(--rule); width:50%; height:26px;
-}
-.tree li::after{ right:auto; left:50%; border-left:2px solid var(--rule); }
-.tree li:only-child{ padding-top:0; }
-.tree li:only-child::before, .tree li:only-child::after{ display:none; }
-.tree li:first-child::before{ border:none; }
-.tree li:last-child::after{ border:none; }
-.tree li:last-child::before{ border-right:2px solid var(--rule); border-radius:0 6px 0 0; }
-.tree li:first-child::after{ border-radius:6px 0 0 0; }
-.tree > li{ padding-top:0; }
-.tree > li::before, .tree > li::after{ display:none; }
 .tree ul::before{
-  content:""; position:absolute; top:0; left:50%;
-  border-left:2px solid var(--rule); width:0; height:26px;
+  content:""; position:absolute; top:50%; left:0;
+  border-top:2px solid var(--rule); width:34px; height:0;
 }
+.tree li{
+  display:flex; flex-direction:row; align-items:center;
+  position:relative; padding:10px 0 10px 34px; list-style:none;
+}
+.tree li::before{ /* horizontal stub: spine -> this card */
+  content:""; position:absolute; top:50%; left:0;
+  border-top:2px solid var(--rule); width:34px; height:0;
+}
+.tree li::after{ /* vertical spine segment running through this li */
+  content:""; position:absolute; left:0; top:0; bottom:0;
+  border-left:2px solid var(--rule);
+}
+.tree li:first-child::after{ top:50%; }
+.tree li:last-child::after{ bottom:50%; }
+.tree li:only-child::before, .tree li:only-child::after{ display:none; }
+.tree li:first-child:last-child::after{ display:none; }
+.tree > li{ padding-left:0; }
+.tree > li::before, .tree > li::after{ display:none; }
 
 /* ---------------- Node card ---------------- */
 .node-card{
@@ -179,7 +180,7 @@ body{
 }
 
 .expand-btn{
-  position:absolute; left:50%; bottom:-13px; transform:translateX(-50%);
+  position:absolute; top:50%; right:-13px; transform:translateY(-50%);
   width:26px; height:26px; border-radius:50%;
   background:var(--green); color:#fff; border:2px solid var(--paper);
   font-size:14px; line-height:1; cursor:pointer;
@@ -188,11 +189,11 @@ body{
   transition: transform .18s ease, background .18s ease;
   z-index:2;
 }
-.expand-btn:hover{ background:var(--green-deep); transform:translateX(-50%) scale(1.1); }
-.expand-btn.expanded{ transform:translateX(-50%) rotate(45deg); }
-.expand-btn.expanded:hover{ transform:translateX(-50%) rotate(45deg) scale(1.1); }
+.expand-btn:hover{ background:var(--green-deep); transform:translateY(-50%) scale(1.1); }
+.expand-btn.expanded{ transform:translateY(-50%) rotate(45deg); }
+.expand-btn.expanded:hover{ transform:translateY(-50%) rotate(45deg) scale(1.1); }
 .expand-btn.disabled{ background:#B9A26B; cursor:default; opacity:.55; }
-.expand-btn.disabled:hover{ transform:translateX(-50%); background:#B9A26B; }
+.expand-btn.disabled:hover{ transform:translateY(-50%); background:#B9A26B; }
 
 .sib-toggle{
   margin-top:7px; font-size:10.5px; color:var(--green-deep);
