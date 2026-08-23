@@ -201,14 +201,27 @@ body{
   padding:2px 8px; cursor:pointer; font-family:"PT Serif", serif;
 }
 .sib-toggle:hover{ background:rgba(70,97,63,.10); }
-.sib-list{
-  margin-top:8px; padding-top:7px; border-top:1px dashed var(--rule);
-  text-align:left; font-size:11px; line-height:1.4; color:var(--ink-soft);
-  max-height:0; overflow:hidden; opacity:0;
-  transition: max-height .25s ease, opacity .25s ease;
+.sib-flyout{
+  position:absolute; top:0; left:100%; margin-left:12px;
+  width:250px; max-height:300px; overflow-y:auto;
+  background:var(--card-bg); border:1px solid var(--rule); border-radius:var(--radius);
+  box-shadow: var(--shadow);
+  padding:10px 12px; text-align:left;
+  font-size:11px; line-height:1.5; color:var(--ink-soft);
+  opacity:0; transform:translateX(-10px);
+  pointer-events:none;
+  transition: opacity .22s ease, transform .22s ease;
+  z-index:6;
 }
-.sib-list.open{ max-height:400px; opacity:1; }
-.sib-list div{ padding:2px 0; }
+.sib-flyout::before{
+  content:""; position:absolute; top:14px; left:-7px;
+  width:12px; height:12px; background:var(--card-bg);
+  border-left:1px solid var(--rule); border-bottom:1px solid var(--rule);
+  transform:rotate(45deg);
+}
+.sib-flyout.open{ opacity:1; transform:translateX(0); pointer-events:auto; }
+.sib-flyout div{ padding:3px 0; border-bottom:1px dashed var(--rule); }
+.sib-flyout div:last-child{ border-bottom:none; }
 
 /* ---------------- Modal ---------------- */
 #modal-overlay{

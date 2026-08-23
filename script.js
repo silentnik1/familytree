@@ -41,7 +41,7 @@
         '<button class="sib-toggle" data-sibpath="' + escapeHtml(path) + '">' +
         (open ? "− " : "+ ") + node.siblings.length + " брат./сестр." +
         "</button>" +
-        '<div class="sib-list' + (open ? " open" : "") + '">' +
+        '<div class="sib-flyout' + (open ? " open" : "") + '">' +
         node.siblings.map(function (s) { return "<div>" + escapeHtml(s) + "</div>"; }).join("") +
         "</div>";
     }
