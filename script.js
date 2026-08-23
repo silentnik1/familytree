@@ -1,157 +1,191 @@
 (function () {
   "use strict";
 
-  var DATA = window.TREE_DATA;
-  var RECORDS = DATA.records;
+  var ROOT = window.PEDIGREE;
   var canvas = document.getElementById("canvas");
+  var tree = document.getElementById("tree");
   var canvasWrap = document.getElementById("canvas-wrap");
 
-  var LIVING_MARK = /\((я|тато|мама)/i;
+  var expandedPaths = new Set(["root"]); // "root" expanded => show дід level by default
+  var sibOpenPaths = new Set();
 
   function escapeHtml(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  function isLiving(text) {
-    return LIVING_MARK.test(text || "");
+  function hasParents(node) {
+    return !!(node.parents && (node.parents.father_side || node.parents.mother_side));
   }
 
-  function recordBadges(recs) {
-    if (!recs || !recs.length) return "";
-    return recs
-      .filter(function (r) { return RECORDS[r]; })
-      .map(function (r) { return '<span class="rec-badge" data-rec="' + escapeHtml(r) + '">' + escapeHtml(r) + "</span>"; })
-      .join(" ");
-  }
+  function cardHTML(node, path, isRoot) {
+    var livingCls = isRoot ? " living" : "";
+    var nameLine = '<span class="name' + livingCls + '">' + escapeHtml(node.husband) + "</span>";
+    if (node.wife) {
+      nameLine += '<div class="plus">⚭' + (node.marriage_date ? " " + escapeHtml(node.marriage_date) : "") + "</div>";
+      nameLine += '<span class="name' + livingCls + '">' + escapeHtml(node.wife) + (isRoot && node.birth_year ? " (" + escapeHtml(node.birth_year) + " р.н.)" : "") + "</span>";
+    } else if (isRoot && node.birth_year) {
+      nameLine += '<div class="unknown">' + escapeHtml(node.birth_year) + " р.н.</div>";
+    } else {
+      nameLine += '<div class="unknown">дані про дружину невідомі</div>';
+    }
 
-  function cardHTML(block) {
-    if (block.type === "trunk") {
-      var recBadge = block.record && RECORDS[block.record]
-        ? '<span class="rec-badge" data-rec="' + escapeHtml(block.record) + '">запис ' + escapeHtml(block.record) + "</span>"
-        : "";
-      return (
-        '<div class="card trunk" tabindex="0" data-kind="trunk" data-record="' + escapeHtml(block.record || "") + '" data-search="' +
-        escapeHtml((block.groom || "") + " " + (block.bride || "")).toLowerCase() + '">' +
-        '<span class="name' + (isLiving(block.groom) ? " living" : "") + '">' + escapeHtml(block.groom) + "</span>" +
-        '<div class="plus">⚭ ' + escapeHtml((block.date || "").replace(/\d{1,3}\s?[-–]{1,2}\s?\d{1,2}½?/, "").trim()) + "</div>" +
-        '<span class="name' + (isLiving(block.bride) ? " living" : "") + '">' + escapeHtml(block.bride) + "</span>" +
-        (recBadge ? "<div>" + recBadge + "</div>" : "") +
-        "</div>"
-      );
+    var badge = node.record && node.record_detail
+      ? '<div><span class="rec-badge">запис ' + escapeHtml(node.record) + "</span></div>"
+      : "";
+
+    var sibHTML = "";
+    if (node.siblings && node.siblings.length) {
+      var open = sibOpenPaths.has(path);
+      sibHTML =
+        '<button class="sib-toggle" data-sibpath="' + escapeHtml(path) + '">' +
+        (open ? "− " : "+ ") + node.siblings.length + " брат./сестр." +
+        "</button>" +
+        '<div class="sib-list' + (open ? " open" : "") + '">' +
+        node.siblings.map(function (s) { return "<div>" + escapeHtml(s) + "</div>"; }).join("") +
+        "</div>";
     }
-    if (block.type === "pair") {
-      return (
-        '<div class="card pair" tabindex="0" data-kind="pair" data-search="' +
-        escapeHtml((block.a || "") + " " + (block.b || "")).toLowerCase() + '">' +
-        '<span class="name' + (isLiving(block.a) ? " living" : "") + '">' + escapeHtml(block.a) + "</span>" +
-        '<div class="plus">+</div>' +
-        '<span class="name' + (isLiving(block.b) ? " living" : "") + '">' + escapeHtml(block.b) + "</span>" +
-        "<div>" + recordBadges(block.records) + "</div>" +
-        "</div>"
-      );
-    }
-    // single
+
+    var expanded = expandedPaths.has(path);
+    var canExpand = hasParents(node);
+    var expandBtn = canExpand
+      ? '<button class="expand-btn' + (expanded ? " expanded" : "") + '" data-path="' + escapeHtml(path) + '" aria-label="Розгорнути">+</button>'
+      : "";
+
     return (
-      '<div class="card single" tabindex="0" data-kind="single" data-search="' +
-      escapeHtml(block.text || "").toLowerCase() + '">' +
-      '<span class="single-text' + (isLiving(block.text) ? " living" : "") + '">' + escapeHtml(block.text) + "</span>" +
-      "<div>" + recordBadges(block.records) + "</div>" +
+      '<div class="node-card' + (isRoot ? " root" : "") + '" data-detail-path="' + escapeHtml(path) + '">' +
+      nameLine + badge + sibHTML + expandBtn +
       "</div>"
     );
   }
 
-  function render() {
-    var html = "";
-    DATA.generations.forEach(function (gen) {
-      html += '<section class="gen-section">';
-      html += '<span class="gen-node"></span>';
-      html += '<div class="gen-header"><span class="gen-label">' + escapeHtml(gen.label) + "</span>";
-      html += '<span class="gen-count">' + gen.blocks.length + (gen.blocks.length === 1 ? " запис" : " записів") + "</span></div>";
-      html += '<div class="gen-row">';
-      gen.blocks.forEach(function (b) { html += cardHTML(b); });
-      html += "</div></section>";
-    });
-    canvas.innerHTML = html;
-    attachCardEvents();
-  }
-
-  function attachCardEvents() {
-    var cards = canvas.querySelectorAll(".card");
-    cards.forEach(function (card) {
-      card.addEventListener("click", function (e) {
-        var badge = e.target.closest(".rec-badge");
-        if (badge) {
-          openRecord(badge.getAttribute("data-rec"));
-          e.stopPropagation();
-          return;
+  function renderLI(node, path, isRoot) {
+    var html = "<li>" + cardHTML(node, path, isRoot);
+    if (hasParents(node) && expandedPaths.has(path)) {
+      html += "<ul>";
+      ["father_side", "mother_side"].forEach(function (key) {
+        if (node.parents[key]) {
+          html += renderLI(node.parents[key], path + "." + key, false);
         }
-        openCard(card);
       });
-      card.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCard(card); }
+      html += "</ul>";
+    }
+    html += "</li>";
+    return html;
+  }
+
+  function nodeAtPath(path) {
+    var parts = path.split(".");
+    var n = ROOT;
+    for (var i = 1; i < parts.length; i++) {
+      if (!n.parents || !n.parents[parts[i]]) return null;
+      n = n.parents[parts[i]];
+    }
+    return n;
+  }
+
+  function render() {
+    tree.innerHTML = "<ul>" + renderLI(ROOT, "root", true) + "</ul>";
+    attachEvents();
+  }
+
+  function attachEvents() {
+    tree.querySelectorAll(".expand-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var path = btn.getAttribute("data-path");
+        if (expandedPaths.has(path)) expandedPaths.delete(path);
+        else expandedPaths.add(path);
+        render();
+      });
+    });
+    tree.querySelectorAll(".sib-toggle").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var path = btn.getAttribute("data-sibpath");
+        if (sibOpenPaths.has(path)) sibOpenPaths.delete(path);
+        else sibOpenPaths.add(path);
+        render();
+      });
+    });
+    tree.querySelectorAll(".node-card").forEach(function (card) {
+      card.addEventListener("click", function () {
+        openDetail(card.getAttribute("data-detail-path"));
       });
     });
   }
 
-  function openCard(card) {
-    var record = card.getAttribute("data-record");
-    if (record && RECORDS[record]) {
-      openRecord(record);
-      return;
-    }
-    var text = card.textContent.trim();
-    var body =
-      '<h2>Родинний запис</h2>' +
-      '<div class="rawtext">' + escapeHtml(text) + "</div>" +
-      '<p class="no-record">Детального метричного запису для цього запису не знайдено в реєстрах шлюбів.</p>';
-    showModal(body);
-  }
-
+  // ---------------- Modal ----------------
   function recordRow(k, v) {
     if (!v) return "";
     return '<div class="row"><div class="k">' + escapeHtml(k) + '</div><div class="v">' + escapeHtml(v) + "</div></div>";
   }
 
-  function openRecord(recId) {
-    var r = RECORDS[recId];
-    if (!r) return;
-    var body = '<h2>Шлюбний запис № ' + escapeHtml(recId) + "</h2>";
-    body += recordRow("Дата шлюбу", r["дата"]);
-    body += recordRow("Дім №", r["дім"]);
-    body += '<div class="side"><h3>Наречений</h3>';
-    body += recordRow("Ім'я", r["наречений"]);
-    body += recordRow("Батьки", r["батьки_нареченого"]);
-    body += recordRow("Рік/дата народж.", r["дата_нар_нар"]);
-    body += recordRow("Вік", r["вік_нар"]);
-    body += recordRow("Стан", r["статус_нар"]);
-    body += "</div>";
-    body += '<div class="side"><h3>Наречена</h3>';
-    body += recordRow("Ім'я", r["наречена"]);
-    body += recordRow("Батьки", r["батьки_нареченої"]);
-    body += recordRow("Рік/дата народж.", r["дата_нар_нев"]);
-    body += recordRow("Вік", r["вік_нев"]);
-    body += recordRow("Стан", r["статус_нев"]);
-    body += "</div>";
-    if (r["свідки"]) {
-      body += '<div class="side"><h3>Свідки</h3><div class="rawtext">' + escapeHtml(r["свідки"]) + "</div></div>";
+  function openDetail(path) {
+    var node = nodeAtPath(path);
+    if (!node) return;
+    var r = node.record_detail;
+    var body;
+    if (r) {
+      body = '<h2>Шлюбний запис № ' + escapeHtml(node.record) + "</h2>";
+      body += recordRow("Дата шлюбу", r["дата"]);
+      body += recordRow("Дім №", r["дім"]);
+      body += '<div class="side"><h3>Наречений</h3>';
+      body += recordRow("Ім'я", r["наречений"]);
+      body += recordRow("Батьки", r["батьки_нареченого"]);
+      body += recordRow("Рік/дата народж.", r["дата_нар_нар"]);
+      body += recordRow("Вік", r["вік_нар"]);
+      body += recordRow("Стан", r["статус_нар"]);
+      body += "</div>";
+      body += '<div class="side"><h3>Наречена</h3>';
+      body += recordRow("Ім'я", r["наречена"]);
+      body += recordRow("Батьки", r["батьки_нареченої"]);
+      body += recordRow("Рік/дата народж.", r["дата_нар_нев"]);
+      body += recordRow("Вік", r["вік_нев"]);
+      body += recordRow("Стан", r["статус_нев"]);
+      body += "</div>";
+      if (r["свідки"]) {
+        body += '<div class="side"><h3>Свідки</h3><div class="rawtext">' + escapeHtml(r["свідки"]) + "</div></div>";
+      }
+    } else {
+      body = "<h2>" + escapeHtml(node.husband) + (node.wife ? " та " + escapeHtml(node.wife) : "") + "</h2>";
+      if (node.marriage_date) body += recordRow("Дата шлюбу", node.marriage_date);
+      if (node.birth_year) body += recordRow("Рік народження", node.birth_year);
+      if (!node.marriage_date && !node.birth_year) {
+        body += '<p class="no-record">Детального метричного запису для цієї особи не знайдено в реєстрах шлюбів.</p>';
+      }
+      if (node.siblings && node.siblings.length) {
+        body += '<div class="side"><h3>Брати / сестри</h3><div class="rawtext">' + node.siblings.map(escapeHtml).join("\n") + "</div></div>";
+      }
     }
-    showModal(body);
-  }
-
-  function showModal(html) {
-    document.getElementById("modal-body").innerHTML = html;
+    document.getElementById("modal-body").innerHTML = body;
     document.getElementById("modal-overlay").classList.remove("hidden");
   }
-  function closeModal() {
-    document.getElementById("modal-overlay").classList.add("hidden");
-  }
+  function closeModal() { document.getElementById("modal-overlay").classList.add("hidden"); }
   document.getElementById("modal-close").addEventListener("click", closeModal);
   document.getElementById("modal-overlay").addEventListener("click", function (e) {
     if (e.target.id === "modal-overlay") closeModal();
   });
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeModal();
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
+
+  // ---------------- Expand all / collapse all ----------------
+  function collectPaths(node, path, acc) {
+    acc.push(path);
+    if (hasParents(node)) {
+      ["father_side", "mother_side"].forEach(function (key) {
+        if (node.parents[key]) collectPaths(node.parents[key], path + "." + key, acc);
+      });
+    }
+    return acc;
+  }
+  document.getElementById("expandAll").addEventListener("click", function () {
+    collectPaths(ROOT, "root", []).forEach(function (p) { expandedPaths.add(p); });
+    render();
+  });
+  document.getElementById("collapseAll").addEventListener("click", function () {
+    expandedPaths.clear();
+    expandedPaths.add("root");
+    render();
   });
 
   // ---------------- Zoom / Pan ----------------
@@ -167,9 +201,6 @@
   document.getElementById("zoomOut").addEventListener("click", function () {
     zoom = Math.max(MIN_Z, +(zoom - 0.1).toFixed(2)); applyZoom();
   });
-  document.getElementById("zoomReset").addEventListener("click", function () {
-    zoom = 1; applyZoom(); canvasWrap.scrollLeft = 0; canvasWrap.scrollTop = 0;
-  });
   canvasWrap.addEventListener("wheel", function (e) {
     if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
@@ -178,10 +209,9 @@
     applyZoom();
   }, { passive: false });
 
-  // drag-to-pan
   var isDown = false, startX, startY, scrollLeft, scrollTop;
   canvasWrap.addEventListener("mousedown", function (e) {
-    if (e.target.closest(".card") || e.target.closest("button") || e.target.closest("input")) return;
+    if (e.target.closest(".node-card") || e.target.closest("button")) return;
     isDown = true;
     canvasWrap.classList.add("grabbing");
     startX = e.pageX; startY = e.pageY;
@@ -194,7 +224,6 @@
     canvasWrap.scrollTop = scrollTop - (e.pageY - startY);
   });
 
-  // pinch-zoom (touch)
   var touchDist = null;
   canvasWrap.addEventListener("touchstart", function (e) {
     if (e.touches.length === 2) {
@@ -216,33 +245,6 @@
       touchDist = d;
     }
   }, { passive: true });
-
-  // ---------------- Search ----------------
-  var searchInput = document.getElementById("search");
-  var searchTimer = null;
-  searchInput.addEventListener("input", function () {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(doSearch, 120);
-  });
-  function doSearch() {
-    var q = searchInput.value.trim().toLowerCase();
-    var cards = canvas.querySelectorAll(".card");
-    var firstMatch = null;
-    cards.forEach(function (card) {
-      if (!q) {
-        card.classList.remove("dimmed", "matched");
-        return;
-      }
-      var hay = card.getAttribute("data-search") || "";
-      var match = hay.indexOf(q) !== -1;
-      card.classList.toggle("dimmed", !match);
-      card.classList.toggle("matched", match);
-      if (match && !firstMatch) firstMatch = card;
-    });
-    if (firstMatch) {
-      firstMatch.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
-    }
-  }
 
   render();
   applyZoom();

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Родовід Курусів — с. Розлуч</title>
-<meta name="description" content="Родинне дерево роду Курус, с. Розлуч. Від прапрапрапрадіда Голиша Михайла до сьогодення.">
+<meta name="description" content="Родовід тата: інтерактивне дерево предків з можливістю розгортати покоління.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -16,30 +16,26 @@
     <div class="brand">
       <span class="brand-seal">Р</span>
       <div class="brand-text">
-        <h1>Родовід Курусів</h1>
-        <p>село Розлуч, Турківщина</p>
+        <h1>Родовід тата</h1>
+        <p>рід Курус · село Розлуч, Турківщина</p>
       </div>
     </div>
     <div class="controls">
-      <input id="search" type="text" placeholder="Пошук за іменем…" autocomplete="off">
+      <button id="expandAll" class="ctrl-btn">Розгорнути все</button>
+      <button id="collapseAll" class="ctrl-btn">Згорнути все</button>
       <div class="zoom-controls">
         <button id="zoomOut" aria-label="Зменшити">−</button>
         <span id="zoomLevel">100%</span>
         <button id="zoomIn" aria-label="Збільшити">+</button>
-        <button id="zoomReset" aria-label="Скинути масштаб">⟲</button>
       </div>
     </div>
   </div>
 </header>
 
-<div class="legend">
-  <span class="legend-item"><i class="swatch trunk"></i> пряма лінія (шлюбний запис)</span>
-  <span class="legend-item"><i class="swatch sibling"></i> брати / сестри / бічні гілки</span>
-  <span class="legend-item hint">Клікніть картку, щоб побачити повний запис</span>
-</div>
+<p class="hint">Клікніть на стрілку картки, щоб розгорнути батьків. Клікніть на саму картку — щоб побачити повний метричний запис.</p>
 
 <main id="canvas-wrap">
-  <div id="canvas"></div>
+  <div id="canvas"><div class="tree" id="tree"></div></div>
 </main>
 
 <div id="modal-overlay" class="hidden">
