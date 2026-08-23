@@ -41,8 +41,11 @@
         '<button class="sib-toggle" data-sibpath="' + escapeHtml(path) + '">' +
         (open ? "− " : "+ ") + node.siblings.length + " брат./сестр." +
         "</button>" +
-        '<div class="sib-flyout' + (open ? " open" : "") + '">' +
-        node.siblings.map(function (s) { return "<div>" + escapeHtml(s) + "</div>"; }).join("") +
+        '<div class="sib-branch' + (open ? " open" : "") + '">' +
+        node.siblings.map(function (s, i) {
+          var delay = open ? (i * 0.045).toFixed(3) + "s" : "0s";
+          return '<div class="sib-card" style="transition-delay:' + delay + '">' + escapeHtml(s) + "</div>";
+        }).join("") +
         "</div>";
     }
 
