@@ -1,0 +1,245 @@
+:root{
+  --paper: #ECE1C4;
+  --paper-deep: #E1D2A9;
+  --card-bg: #F5EDD8;
+  --card-bg-trunk: #F7EFDD;
+  --ink: #2E2013;
+  --ink-soft: #6B5B44;
+  --rule: #C3AE7C;
+  --green: #46613F;
+  --green-deep: #34492F;
+  --wine: #7A2E2E;
+  --living: #8A5A2B;
+  --shadow: 0 1px 0 rgba(46,32,19,.06), 0 6px 18px rgba(46,32,19,.10);
+  --radius: 3px;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(ellipse at 20% -10%, rgba(255,255,255,.35), transparent 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"PT Serif", Georgia, serif;
+  min-height:100vh;
+}
+::selection{ background: var(--green); color:#fff; }
+
+/* ---------------- Topbar ---------------- */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  background: var(--paper-deep);
+  border-bottom:1px solid var(--rule);
+  box-shadow: 0 2px 8px rgba(46,32,19,.08);
+}
+.topbar-inner{
+  max-width:1400px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; padding:12px 20px;
+  flex-wrap:wrap;
+}
+.brand{ display:flex; align-items:center; gap:12px; }
+.brand-seal{
+  width:42px; height:42px; border-radius:50%;
+  background: var(--wine); color:#F5EDD8;
+  display:flex; align-items:center; justify-content:center;
+  font-family:"Yeseva One", serif; font-size:20px;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.15), 0 2px 4px rgba(0,0,0,.25);
+  flex:none;
+}
+.brand-text h1{
+  font-family:"Yeseva One", serif; font-weight:400;
+  font-size: clamp(20px, 3vw, 26px);
+  margin:0; letter-spacing:.2px; color:var(--ink);
+}
+.brand-text p{
+  margin:2px 0 0; font-size:12.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-soft);
+}
+.controls{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+#search{
+  font-family:"PT Serif", serif; font-size:14px;
+  padding:8px 12px; width:210px; max-width:44vw;
+  border:1px solid var(--rule); border-radius:var(--radius);
+  background:var(--card-bg); color:var(--ink);
+}
+#search:focus{ outline:2px solid var(--green); outline-offset:1px; }
+.zoom-controls{
+  display:flex; align-items:center; gap:6px;
+  background:var(--card-bg); border:1px solid var(--rule); border-radius:var(--radius);
+  padding:4px 6px;
+}
+.zoom-controls button{
+  width:26px; height:26px; border:none; background:transparent;
+  color:var(--green-deep); font-size:16px; cursor:pointer; border-radius:3px;
+  font-family:"IBM Plex Mono", monospace;
+}
+.zoom-controls button:hover{ background:rgba(70,97,63,.14); }
+.zoom-controls button:focus-visible, #search:focus-visible{ outline:2px solid var(--green); }
+#zoomLevel{ font-family:"IBM Plex Mono", monospace; font-size:12px; color:var(--ink-soft); width:38px; text-align:center; }
+
+/* ---------------- Legend ---------------- */
+.legend{
+  max-width:1400px; margin:0 auto; padding:10px 20px 0;
+  display:flex; gap:20px; flex-wrap:wrap; align-items:center;
+  font-size:12.5px; color:var(--ink-soft);
+}
+.legend-item{ display:flex; align-items:center; gap:6px; }
+.legend-item.hint{ margin-left:auto; font-style:italic; }
+.swatch{ width:12px; height:12px; border-radius:2px; display:inline-block; flex:none; }
+.swatch.trunk{ background:var(--green); }
+.swatch.sibling{ background:#B9A26B; }
+.swatch.living{ background:var(--living); }
+
+/* ---------------- Canvas ---------------- */
+#canvas-wrap{
+  overflow:auto;
+  max-width:100%;
+  padding:28px 0 60px;
+  cursor:grab;
+}
+#canvas-wrap.grabbing{ cursor:grabbing; }
+#canvas{
+  transform-origin: top left;
+  transition: transform .12s ease-out;
+  width:max-content;
+  padding: 0 40px;
+}
+
+.gen-section{
+  position:relative;
+  padding: 6px 0 30px 34px;
+  margin-bottom: 6px;
+}
+.gen-section::before{ /* the vine */
+  content:"";
+  position:absolute; left:10px; top:-4px; bottom:0;
+  width:2px;
+  background: repeating-linear-gradient(to bottom, var(--rule) 0 6px, transparent 6px 11px);
+}
+.gen-section:first-child::before{ top: 22px; }
+.gen-section:last-child::before{ bottom: 50%; }
+.gen-node{
+  position:absolute; left:4px; top:2px;
+  width:14px; height:14px; border-radius:50%;
+  background: var(--green); border:2px solid var(--paper);
+  box-shadow:0 0 0 1px var(--rule);
+}
+.gen-header{
+  display:flex; align-items:baseline; gap:10px; margin-bottom:14px;
+}
+.gen-label{
+  font-family:"Yeseva One", serif; font-weight:400;
+  font-size:19px; color:var(--green-deep);
+  text-transform:lowercase;
+}
+.gen-count{
+  font-family:"IBM Plex Mono", monospace; font-size:11.5px;
+  color:var(--ink-soft);
+}
+.gen-row{
+  display:flex; gap:14px; align-items:flex-start;
+  padding-bottom:6px;
+}
+
+/* ---------------- Cards ---------------- */
+.card{
+  background:var(--card-bg);
+  border:1px solid var(--rule);
+  border-radius:var(--radius);
+  box-shadow: var(--shadow);
+  padding:10px 12px;
+  width:186px; flex:none;
+  cursor:pointer;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.card:hover{ transform: translateY(-2px); box-shadow:0 10px 22px rgba(46,32,19,.16); }
+.card:focus-visible{ outline:2px solid var(--green); outline-offset:2px; }
+.card.dimmed{ opacity:.28; }
+.card.matched{ outline:2px solid var(--wine); outline-offset:1px; }
+
+.card.trunk{
+  width:206px;
+  background:var(--card-bg-trunk);
+  border-left:4px solid var(--green);
+}
+.card.pair{ border-left:4px solid #B9A26B; }
+.card.single{ border-left:4px solid #CBB98A; }
+
+.card .name{
+  font-size:13.5px; line-height:1.32; color:var(--ink);
+  display:block; margin-bottom:2px;
+}
+.card .name.living{ color:var(--living); font-style:italic; }
+.card .plus{
+  text-align:center; font-size:10px; color:var(--ink-soft);
+  margin:3px 0; letter-spacing:.1em;
+}
+.card .rec-badge{
+  display:inline-block; margin-top:6px;
+  font-family:"IBM Plex Mono", monospace; font-size:10px;
+  color:#fff; background:var(--wine);
+  padding:1px 6px; border-radius:10px;
+}
+.card .single-text{
+  font-size:12.5px; line-height:1.35; color:var(--ink-soft);
+  display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;
+}
+
+/* ---------------- Modal ---------------- */
+#modal-overlay{
+  position:fixed; inset:0; background:rgba(30,20,10,.5);
+  display:flex; align-items:center; justify-content:center;
+  z-index:100; padding:20px;
+}
+#modal-overlay.hidden{ display:none; }
+#modal{
+  background:var(--card-bg); border:1px solid var(--rule);
+  border-radius:6px; max-width:560px; width:100%;
+  max-height:82vh; overflow:auto; position:relative;
+  padding:28px 26px 24px; box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+#modal-close{
+  position:absolute; top:10px; right:12px;
+  background:none; border:none; font-size:22px; line-height:1;
+  color:var(--ink-soft); cursor:pointer; padding:6px;
+}
+#modal-close:hover{ color:var(--wine); }
+#modal-body h2{
+  font-family:"Yeseva One", serif; font-weight:400; font-size:20px;
+  margin:0 0 14px; color:var(--green-deep);
+}
+#modal-body .row{
+  display:grid; grid-template-columns: 118px 1fr;
+  gap:4px 12px; font-size:13.5px; padding:5px 0;
+  border-bottom:1px dashed var(--rule);
+}
+#modal-body .row .k{ color:var(--ink-soft); font-size:12px; text-transform:uppercase; letter-spacing:.06em; padding-top:2px;}
+#modal-body .row .v{ color:var(--ink); }
+#modal-body .side{
+  margin-top:16px; padding-top:12px; border-top:2px solid var(--rule);
+}
+#modal-body .side h3{
+  font-family:"PT Serif", serif; font-size:14px; font-weight:700;
+  margin:0 0 6px; color:var(--wine);
+}
+#modal-body .rawtext{
+  font-size:13px; line-height:1.55; color:var(--ink); white-space:pre-wrap;
+}
+#modal-body .no-record{
+  font-size:12.5px; color:var(--ink-soft); font-style:italic; margin-top:10px;
+}
+
+/* ---------------- Footer ---------------- */
+.sitefoot{
+  max-width:1400px; margin:0 auto; padding:10px 20px 40px;
+  font-size:11.5px; color:var(--ink-soft);
+}
+
+@media (max-width:640px){
+  .brand-text p{ display:none; }
+  #search{ width:150px; }
+  .legend{ font-size:11.5px; }
+  .legend-item.hint{ display:none; }
+}

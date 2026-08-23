@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Родовід Курусів — с. Розлуч</title>
+<meta name="description" content="Родинне дерево роду Курус, с. Розлуч. Від прапрапрапрадіда Голиша Михайла до сьогодення.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-seal">Р</span>
+      <div class="brand-text">
+        <h1>Родовід Курусів</h1>
+        <p>село Розлуч, Турківщина</p>
+      </div>
+    </div>
+    <div class="controls">
+      <input id="search" type="text" placeholder="Пошук за іменем…" autocomplete="off">
+      <div class="zoom-controls">
+        <button id="zoomOut" aria-label="Зменшити">−</button>
+        <span id="zoomLevel">100%</span>
+        <button id="zoomIn" aria-label="Збільшити">+</button>
+        <button id="zoomReset" aria-label="Скинути масштаб">⟲</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="legend">
+  <span class="legend-item"><i class="swatch trunk"></i> пряма лінія (шлюбний запис)</span>
+  <span class="legend-item"><i class="swatch sibling"></i> брати / сестри / бічні гілки</span>
+  <span class="legend-item"><i class="swatch living"></i> живі — лише ініціали</span>
+  <span class="legend-item hint">Клікніть картку, щоб побачити повний запис</span>
+</div>
+
+<main id="canvas-wrap">
+  <div id="canvas"></div>
+</main>
+
+<div id="modal-overlay" class="hidden">
+  <div id="modal">
+    <button id="modal-close" aria-label="Закрити">×</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<footer class="sitefoot">
+  <p>Складено на основі метричних книг с. Розлуч (Турківський р-н, Львівська обл.) та родинних записів. Дані про живих осіб анонімізовано.</p>
+</footer>
+
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
